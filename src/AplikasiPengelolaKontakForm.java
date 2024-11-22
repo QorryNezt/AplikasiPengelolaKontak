@@ -1,3 +1,8 @@
+import java.sql.Connection;
+import java.sql.SQLException;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
@@ -17,6 +22,31 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
         KontakKoneksiHelper.createTable(); // Memastikan table terbuat setiap aplikasi dijalankan.
     }
 
+    private void clearFields() {
+    txtNama.setText("");
+    txtNoTelp.setText("");
+    cbbKategori.setSelectedIndex(0);
+}
+    private void loadTableData() {
+    DefaultTableModel model = (DefaultTableModel) tblKontak.getModel();
+    model.setRowCount(0);
+
+    String sql = "SELECT nama, telepon, kategori FROM kontak";
+    try (Connection conn = KontakKoneksiHelper.connect();
+         java.sql.Statement stmt = conn.createStatement();
+         java.sql.ResultSet rs = stmt.executeQuery(sql)) {
+
+        while (rs.next()) {
+            model.addRow(new Object[]{
+                rs.getString("nama"),
+                rs.getString("telepon"),
+                rs.getString("kategori")
+            });
+        }
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Gagal memuat data: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -53,6 +83,11 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
 
         btnKeluar.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnKeluar.setText("Keluar");
+        btnKeluar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnKeluarActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -110,15 +145,35 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
 
         btnSimpan.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnSimpan.setText("Simpan");
+        btnSimpan.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSimpanActionPerformed(evt);
+            }
+        });
 
         btnEdit.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnEdit.setText("Edit");
+        btnEdit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnEditActionPerformed(evt);
+            }
+        });
 
         btnHapus.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnHapus.setText("Hapus");
+        btnHapus.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnHapusActionPerformed(evt);
+            }
+        });
 
         btnCari.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnCari.setText("Cari");
+        btnCari.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCariActionPerformed(evt);
+            }
+        });
 
         btnClear.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnClear.setText("Clear");
@@ -203,6 +258,125 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void btnSimpanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanActionPerformed
+        String nama = txtNama.getText();
+    String telepon = txtNoTelp.getText();
+    String kategori = cbbKategori.getSelectedItem().toString();
+
+    if (nama.isEmpty() || telepon.isEmpty() || kategori.equals("(Pilih Kategori Disini)")) {
+        JOptionPane.showMessageDialog(this, "Semua field harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+
+    String sql = "INSERT INTO kontak (nama, telepon, kategori) VALUES (?, ?, ?)";
+    try (Connection conn = KontakKoneksiHelper.connect();
+         java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setString(1, nama);
+        pstmt.setString(2, telepon);
+        pstmt.setString(3, kategori);
+        pstmt.executeUpdate();
+
+        JOptionPane.showMessageDialog(this, "Kontak berhasil disimpan.");
+        clearFields();
+        loadTableData();
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Terjadi kesalahan pada saat penyimpanan kontak: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    }
+    }//GEN-LAST:event_btnSimpanActionPerformed
+
+    private void btnEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditActionPerformed
+        int selectedRow = tblKontak.getSelectedRow();
+    if (selectedRow == -1) {
+        JOptionPane.showMessageDialog(this, "Pilih kontak yang ingin diedit!", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+
+    String nama = txtNama.getText();
+    String telepon = txtNoTelp.getText();
+    String kategori = cbbKategori.getSelectedItem().toString();
+    String oldName = tblKontak.getValueAt(selectedRow, 0).toString();
+
+    if (nama.isEmpty() || telepon.isEmpty() || kategori.equals("(Pilih Kategori Disini)")) {
+        JOptionPane.showMessageDialog(this, "Semua field harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+
+    String sql = "UPDATE kontak SET nama = ?, telepon = ?, kategori = ? WHERE nama = ?";
+    try (Connection conn = KontakKoneksiHelper.connect();
+         java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setString(1, nama);
+        pstmt.setString(2, telepon);
+        pstmt.setString(3, kategori);
+        pstmt.setString(4, oldName);
+        pstmt.executeUpdate();
+
+        JOptionPane.showMessageDialog(this, "Kontak berhasil diperbarui.");
+        clearFields();
+        loadTableData();
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Terjadi kesalahan pada pembaharuan kontak: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    }
+    }//GEN-LAST:event_btnEditActionPerformed
+
+    private void btnHapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusActionPerformed
+        int selectedRow = tblKontak.getSelectedRow();
+    if (selectedRow == -1) {
+        JOptionPane.showMessageDialog(this, "Pilih kontak yang ingin dihapus!", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+
+    String nama = tblKontak.getValueAt(selectedRow, 0).toString();
+    String sql = "DELETE FROM kontak WHERE nama = ?";
+    try (Connection conn = KontakKoneksiHelper.connect();
+         java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setString(1, nama);
+        pstmt.executeUpdate();
+
+        JOptionPane.showMessageDialog(this, "Kontak berhasil dihapus.");
+        loadTableData();
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Terjadi kesalahan pada penghapusan kontak: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    }
+    }//GEN-LAST:event_btnHapusActionPerformed
+
+    private void btnCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCariActionPerformed
+        String searchQuery = txtNama.getText();
+
+    if (searchQuery.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Masukkan nama untuk mencari!", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+
+    DefaultTableModel model = (DefaultTableModel) tblKontak.getModel();
+    model.setRowCount(0);
+
+    String sql = "SELECT nama, telepon, category FROM kontak WHERE nama LIKE ?";
+    try (Connection conn = KontakKoneksiHelper.connect();
+         java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setString(1, "%" + searchQuery + "%");
+        java.sql.ResultSet rs = pstmt.executeQuery();
+
+        while (rs.next()) {
+            model.addRow(new Object[]{
+                rs.getString("nama"),
+                rs.getString("telepon"),
+                rs.getString("kategori")
+            });
+        }
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Gagal mencari kontak: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    }
+    }//GEN-LAST:event_btnCariActionPerformed
+
+    private void btnKeluarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnKeluarActionPerformed
+        // Fungsi button Keluar atau Quit. Sebelum menutup program akan ada konfirmasi terdahulu.
+        int response = JOptionPane.showConfirmDialog(this, "Apakah anda yakin ingin keluar?", "Konfirmasi Keluar",
+            JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (response == JOptionPane.YES_OPTION) {
+            System.exit(0);
+    }
+    }//GEN-LAST:event_btnKeluarActionPerformed
 
     /**
      * @param args the command line arguments
