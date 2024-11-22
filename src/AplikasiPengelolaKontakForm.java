@@ -19,6 +19,7 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
      */
     public AplikasiPengelolaKontakForm() {
         initComponents();
+        loadTableData();
         KontakKoneksiHelper.createTable(); // Memastikan table terbuat setiap aplikasi dijalankan.
     }
 
@@ -127,6 +128,7 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
         cbbKategori.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         cbbKategori.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "(Pilih Kategori Disini)", "Keluarga", "Teman", "Kerja" }));
 
+        tblKontak.setFont(new java.awt.Font("Bahnschrift", 0, 12)); // NOI18N
         tblKontak.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null},
@@ -177,6 +179,11 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
 
         btnClear.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         btnClear.setText("Clear");
+        btnClear.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnClearActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -351,7 +358,7 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
     DefaultTableModel model = (DefaultTableModel) tblKontak.getModel();
     model.setRowCount(0);
 
-    String sql = "SELECT nama, telepon, category FROM kontak WHERE nama LIKE ?";
+    String sql = "SELECT nama, telepon, kategori FROM kontak WHERE nama LIKE ?";
     try (Connection conn = KontakKoneksiHelper.connect();
          java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
         pstmt.setString(1, "%" + searchQuery + "%");
@@ -377,6 +384,10 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
             System.exit(0);
     }
     }//GEN-LAST:event_btnKeluarActionPerformed
+
+    private void btnClearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClearActionPerformed
+        clearFields();
+    }//GEN-LAST:event_btnClearActionPerformed
 
     /**
      * @param args the command line arguments

@@ -36,7 +36,7 @@ public class KontakKoneksiHelper {
         try (Connection conn = connect();
              Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
-            System.out.println("Table 'contacts' created successfully (if it didn't already exist).");
+            System.out.println("Table 'kontak' created successfully (if it didn't already exist).");
         } catch (SQLException e) {
             System.out.println("Error creating table: " + e.getMessage());
         }
