@@ -28,6 +28,7 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
     txtNama.setText("");
     txtNoTelp.setText("");
     cbbKategori.setSelectedIndex(0);
+    loadTableData(); //Load ulang data setelah method ini dijalankan
 }
     private void loadTableData() { // Method pemuatan data table
     DefaultTableModel model = (DefaultTableModel) tblKontak.getModel();
