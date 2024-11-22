@@ -1,3 +1,4 @@
+import java.awt.event.KeyEvent;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.swing.JOptionPane;
@@ -19,20 +20,20 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
      */
     public AplikasiPengelolaKontakForm() {
         initComponents();
-        loadTableData();
+        loadTableData(); // memuat table data apabila aplikasi di jalankan
         KontakKoneksiHelper.createTable(); // Memastikan table terbuat setiap aplikasi dijalankan.
     }
 
-    private void clearFields() {
+    private void clearFields() { // Method Hapus
     txtNama.setText("");
     txtNoTelp.setText("");
     cbbKategori.setSelectedIndex(0);
 }
-    private void loadTableData() {
+    private void loadTableData() { // Method pemuatan data table
     DefaultTableModel model = (DefaultTableModel) tblKontak.getModel();
     model.setRowCount(0);
 
-    String sql = "SELECT nama, telepon, kategori FROM kontak";
+    String sql = "SELECT nama, telepon, kategori FROM kontak"; // Menampilkan isi data berdasarkan isi database kontak.db
     try (Connection conn = KontakKoneksiHelper.connect();
          java.sql.Statement stmt = conn.createStatement();
          java.sql.ResultSet rs = stmt.executeQuery(sql)) {
@@ -44,7 +45,7 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
                 rs.getString("kategori")
             });
         }
-    } catch (SQLException e) {
+    } catch (SQLException e) { // Exception handler jika ada kesalahan
         JOptionPane.showMessageDialog(this, "Gagal memuat data: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
     }
 }
@@ -122,8 +123,21 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
         jLabel4.setText("Kategori");
 
         txtNama.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
+        txtNama.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                txtNamaFocusGained(evt);
+            }
+        });
 
         txtNoTelp.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
+        txtNoTelp.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                txtNoTelpKeyPressed(evt);
+            }
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtNoTelpKeyTyped(evt);
+            }
+        });
 
         cbbKategori.setFont(new java.awt.Font("Bahnschrift", 0, 14)); // NOI18N
         cbbKategori.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "(Pilih Kategori Disini)", "Keluarga", "Teman", "Kerja" }));
@@ -267,15 +281,29 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnSimpanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanActionPerformed
-        String nama = txtNama.getText();
-    String telepon = txtNoTelp.getText();
-    String kategori = cbbKategori.getSelectedItem().toString();
+        String noTelp = txtNoTelp.getText().trim();
+        int minLength = 10; // Panjang minimal no.telp
+        int maxLength = 15; // Panjang maksimal no.telp
 
+        // Cek apabila no.telp sudah benar panjangnya
+        if (noTelp.length() < minLength || noTelp.length() > maxLength) {
+            JOptionPane.showMessageDialog(
+                null,
+                "Nomor telpon harus diantara " + minLength + " digit dan " + maxLength + " digit.",
+                "Nomor Telepon Tidak Valid.",
+                JOptionPane.WARNING_MESSAGE
+            );
+            return; // Stop proses selanjutnya
+        }
+        String nama = txtNama.getText();
+        String telepon = txtNoTelp.getText();
+        String kategori = cbbKategori.getSelectedItem().toString();
+    // Jika semua field atau salah satunya ada yang kosong
     if (nama.isEmpty() || telepon.isEmpty() || kategori.equals("(Pilih Kategori Disini)")) {
         JOptionPane.showMessageDialog(this, "Semua field harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
         return;
     }
-
+    // Memasukkan data kontak yang sudah di input
     String sql = "INSERT INTO kontak (nama, telepon, kategori) VALUES (?, ?, ?)";
     try (Connection conn = KontakKoneksiHelper.connect();
          java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -285,14 +313,15 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
         pstmt.executeUpdate();
 
         JOptionPane.showMessageDialog(this, "Kontak berhasil disimpan.");
-        clearFields();
-        loadTableData();
+        clearFields(); //Method hapus
+        loadTableData(); // Memuat ulang data setelah di update
     } catch (SQLException e) {
         JOptionPane.showMessageDialog(this, "Terjadi kesalahan pada saat penyimpanan kontak: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
     }
     }//GEN-LAST:event_btnSimpanActionPerformed
 
     private void btnEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditActionPerformed
+        // Warning muncul jika semua textfield kosong atau salah satunya
         int selectedRow = tblKontak.getSelectedRow();
     if (selectedRow == -1) {
         JOptionPane.showMessageDialog(this, "Pilih kontak yang ingin diedit!", "Error", JOptionPane.ERROR_MESSAGE);
@@ -303,12 +332,14 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
     String telepon = txtNoTelp.getText();
     String kategori = cbbKategori.getSelectedItem().toString();
     String oldName = tblKontak.getValueAt(selectedRow, 0).toString();
-
+    
+    // Warning muncul jika semua textfield kosong atau salah satunya
     if (nama.isEmpty() || telepon.isEmpty() || kategori.equals("(Pilih Kategori Disini)")) {
         JOptionPane.showMessageDialog(this, "Semua field harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
         return;
     }
-
+    
+    // Memulai proses update kontak
     String sql = "UPDATE kontak SET nama = ?, telepon = ?, kategori = ? WHERE nama = ?";
     try (Connection conn = KontakKoneksiHelper.connect();
          java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -319,46 +350,51 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
         pstmt.executeUpdate();
 
         JOptionPane.showMessageDialog(this, "Kontak berhasil diperbarui.");
-        clearFields();
-        loadTableData();
+        clearFields(); //Method hapus
+        loadTableData(); // Memuat ulang data setelah di update
     } catch (SQLException e) {
         JOptionPane.showMessageDialog(this, "Terjadi kesalahan pada pembaharuan kontak: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
     }
     }//GEN-LAST:event_btnEditActionPerformed
 
     private void btnHapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusActionPerformed
+        // Warning ini akan muncul jika tidak ada row yang di highlight di dalam table
         int selectedRow = tblKontak.getSelectedRow();
-    if (selectedRow == -1) {
+    if (selectedRow == -1) { 
         JOptionPane.showMessageDialog(this, "Pilih kontak yang ingin dihapus!", "Error", JOptionPane.ERROR_MESSAGE);
         return;
     }
-
-    String nama = tblKontak.getValueAt(selectedRow, 0).toString();
-    String sql = "DELETE FROM kontak WHERE nama = ?";
+    // Dialog ini akan muncul untuk konfirmasi hapus data kontak
+    int response = JOptionPane.showConfirmDialog(this, "Apakah anda yakin ingin menghapus kontak ini?", "Konfirmasi Hapus",
+            JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (response == JOptionPane.YES_OPTION) { // Jika user menekan yes maka proses penghapusan kontak dari db akan dijalankan
+        String nama = tblKontak.getValueAt(selectedRow, 0).toString();
+    String sql = "DELETE FROM kontak WHERE nama = ?"; // Menghapus kontak berdasarkan nama kontak
     try (Connection conn = KontakKoneksiHelper.connect();
-         java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
         pstmt.setString(1, nama);
         pstmt.executeUpdate();
 
-        JOptionPane.showMessageDialog(this, "Kontak berhasil dihapus.");
-        loadTableData();
-    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Kontak berhasil dihapus."); // Kontak berhasil terhapus dari kontak.db
+        loadTableData(); // Memuat ulang table data
+    } catch (SQLException e) { // Jika ada kesalahan maka akan ada warning error
         JOptionPane.showMessageDialog(this, "Terjadi kesalahan pada penghapusan kontak: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    } 
     }
     }//GEN-LAST:event_btnHapusActionPerformed
 
     private void btnCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCariActionPerformed
-        String searchQuery = txtNama.getText();
+        String searchQuery = txtNama.getText(); // Mengambil pencarian kontak berdasarkan nama
 
-    if (searchQuery.isEmpty()) {
+    if (searchQuery.isEmpty()) { // Jika txtNama kosong maka akan ada warning
         JOptionPane.showMessageDialog(this, "Masukkan nama untuk mencari!", "Error", JOptionPane.ERROR_MESSAGE);
         return;
     }
-
+    // Jika terisi memulai pencarian kontak berdasarkan nama yang dicari
     DefaultTableModel model = (DefaultTableModel) tblKontak.getModel();
     model.setRowCount(0);
 
-    String sql = "SELECT nama, telepon, kategori FROM kontak WHERE nama LIKE ?";
+    String sql = "SELECT nama, telepon, kategori FROM kontak WHERE nama LIKE ?"; // Menampilkan data berdasarkan yang dicari
     try (Connection conn = KontakKoneksiHelper.connect();
          java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
         pstmt.setString(1, "%" + searchQuery + "%");
@@ -371,7 +407,7 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
                 rs.getString("kategori")
             });
         }
-    } catch (SQLException e) {
+    } catch (SQLException e) { // Jika ada kesalahan maka akan ada warning error
         JOptionPane.showMessageDialog(this, "Gagal mencari kontak: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
     }
     }//GEN-LAST:event_btnCariActionPerformed
@@ -386,8 +422,29 @@ public class AplikasiPengelolaKontakForm extends javax.swing.JFrame {
     }//GEN-LAST:event_btnKeluarActionPerformed
 
     private void btnClearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClearActionPerformed
-        clearFields();
+        clearFields(); //Method hapus
     }//GEN-LAST:event_btnClearActionPerformed
+
+    private void txtNoTelpKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtNoTelpKeyPressed
+        // Salah pilih event :P
+    }//GEN-LAST:event_txtNoTelpKeyPressed
+
+    private void txtNoTelpKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtNoTelpKeyTyped
+      char c = evt.getKeyChar();
+        if (!Character.isDigit(c) && c != KeyEvent.VK_BACK_SPACE && c != KeyEvent.VK_DELETE && 
+        (c != '-' )) {
+
+    // Consume event untuk mencegah input non numerik terkecuali simbol strip (-)
+    evt.consume();
+
+    // menampilkan pesan peringatan apabila user menekan keyboard non-numerik
+    JOptionPane.showMessageDialog(this, "Hanya menerima inputan angka saja!", "Invalid input >x<", JOptionPane.WARNING_MESSAGE);
+        }
+    }//GEN-LAST:event_txtNoTelpKeyTyped
+
+    private void txtNamaFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_txtNamaFocusGained
+        clearFields(); //Method hapus
+    }//GEN-LAST:event_txtNamaFocusGained
 
     /**
      * @param args the command line arguments
